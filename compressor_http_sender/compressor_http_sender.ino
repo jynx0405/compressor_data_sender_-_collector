@@ -2,10 +2,10 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 
-const char* ssid = "Shivkumar.R";
-const char* password = "shivshiv";
+const char* ssid = "";
+const char* password = "";
 
-const char* serverURL = "http://10.44.127.97:8000/store";
+const char* serverURL = "http://[IP]:8000/store";
 
 // Digital pins
 const int pins[] = {16, 17, 18, 19, 21, 22, 25, 26};
