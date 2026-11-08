@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Compressor Monitoring</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f2f4f7;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #263b5e;
+        }
+
+        #updated {
+            text-align: right;
+            margin: 10px;
+            color: #555;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        th {
+            background: #263b5e;
+            color: white;
+        }
+
+        .on {
+            color: green;
+            font-weight: bold;
+        }
+
+        .off {
+            color: red;
+            font-weight: bold;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Compressor Monitoring Dashboard</h1>
+
+    <p id="updated">Waiting for data...</p>
+
+    <div class="table-container">
+
+        <table>
+
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>C1 ON</th>
+                    <th>C1 LOAD</th>
+                    <th>C2 ON</th>
+                    <th>C2 LOAD</th>
+                    <th>C3 ON</th>
+                    <th>C3 LOAD</th>
+                    <th>C4 ON</th>
+                    <th>C4 LOAD</th>
+                    <th>Pressure (bar)</th>
+                </tr>
+            </thead>
+
+            <tbody id="data"></tbody>
+
+        </table>
+
+    </div>
+
+    <script>
+
+        const API_URL = "http://10.44.127.97:8000/read";
+
+        // Convert digital values into ON/OFF
+        function getStatus(value) {
+
+            if (Number(value) === 1) {
+                return '<span class="on">ON</span>';
+            }
+
+            if (Number(value) === 0) {
+                return '<span class="off">OFF</span>';
+            }
+
+            return "Unknown";
+        }
+
+        async function fetchData() {
+
+            try {
+
+                const response = await fetch(API_URL);
+
+                if (!response.ok) {
+                    throw new Error("API error: " + response.status);
+                }
+
+                const records = await response.json();
+
+                const table = document.getElementById("data");
+
+                // Keep latest 10 records
+                const latestRecords = records.slice(-10);
+
+                // Remove previous rows
+                table.innerHTML = "";
+
+                // Insert latest records
+                latestRecords.forEach(row => {
+
+                    const pressure = Number(row.pressure_bar);
+
+                    const pressureValue = Number.isFinite(pressure)
+                        ? pressure.toFixed(2)
+                        : "Sensor Error";
+
+                    const tr = document.createElement("tr");
+
+                    tr.innerHTML = `
+                        <td>${row.time}</td>
+
+                        <td>${getStatus(row.c1_on)}</td>
+                        <td>${getStatus(row.c1_load)}</td>
+
+                        <td>${getStatus(row.c2_on)}</td>
+                        <td>${getStatus(row.c2_load)}</td>
+
+                        <td>${getStatus(row.c3_on)}</td>
+                        <td>${getStatus(row.c3_load)}</td>
+
+                        <td>${getStatus(row.c4_on)}</td>
+                        <td>${getStatus(row.c4_load)}</td>
+
+                        <td>${pressureValue}</td>
+                    `;
+
+                    table.appendChild(tr);
+
+                });
+
+                document.getElementById("updated").innerText =
+                    "Last updated: " + new Date().toLocaleTimeString();
+
+            }
+
+            catch (error) {
+
+                document.getElementById("updated").innerHTML =
+                    '<span class="error">Unable to fetch data: '
+                    + error.message + '</span>';
+
+                console.error(error);
+
+            }
+
+        }
+
+        // Initial fetch
+        fetchData();
+
+        // Refresh every 10 seconds
+        setInterval(fetchData, 10000);
+
+    </script>
+
+</body>
+
+</html>
